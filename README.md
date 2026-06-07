@@ -66,8 +66,9 @@ bank-churn-intelligence/
 │
 ├── notebooks/
 │   ├── 01_data_understanding.ipynb
-│   ├── 02_automated_eda.ipynb
-│   └── 03_custom_churn_eda.ipynb
+│   ├── 02_data_cleaning_feature_engineering
+│   ├── 03_automated_eda.ipynb
+│   └── 04_custom_churn_eda.ipynb
 │
 ├── pages/
 │
