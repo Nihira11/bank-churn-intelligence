@@ -7,5 +7,4 @@ plotly
 scikit-learn
 xgboost
 joblib
-psycopg2-binary
-sqlalchemy
+lifelines

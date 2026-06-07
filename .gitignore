@@ -4,3 +4,7 @@ __pycache__/
 .DS_Store
 .env
 *.pkl
+*.joblib
+data/*.csv
+data/*.xlsx
+models/*.pkl
