@@ -2,20 +2,20 @@
 
 ## Executive Summary
 
-Customer retention is one of the most important challenges faced by banks. Acquiring a new customer is often more expensive than retaining an existing one. This project aims to identify customers who are likely to churn, understand the key drivers behind churn behaviour, estimate potential business impact, and provide data-driven retention recommendations.
+Customer retention is a major challenge for financial institutions, as acquiring new customers is significantly more expensive than retaining existing ones. This project leverages data analytics and machine learning to identify customers at risk of churn, understand the factors driving customer attrition, estimate potential revenue exposure, and provide actionable retention strategies.
 
-The final solution will combine exploratory data analysis, customer segmentation, machine learning, survival analysis, and interactive business dashboards to support customer retention strategies.
+The solution combines exploratory data analysis, customer segmentation, predictive modelling, revenue-at-risk analysis, and an interactive business dashboard to support data-driven decision-making.
 
 ---
 
 ## Project Objectives
 
--  Identify factors that contribute to customer churn.
-- Predict which customers are likely to leave the bank.
-- Estimate revenue at risk from potential churn.
-- Segment customers into meaningful groups and personas.
-- Recommend targeted retention actions.
-- Deliver insights through an interactive Streamlit dashboard.
+- Identify factors that contribute to customer churn
+- Predict which customers are likely to leave the bank
+- Estimate revenue at risk from potential churn
+- Segment customers into meaningful groups and personas
+- Provide retention-focused business recommendations
+- Deliver insights through an interactive Streamlit dashboard
 
 ---
 
@@ -50,6 +50,8 @@ The final solution will combine exploratory data analysis, customer segmentation
 - Scikit-learn
 - XGBoost
 - Plotly
+- Matplotlib
+- Seaborn
 - Lifelines
 - GitHub
 
@@ -71,7 +73,8 @@ bank-churn-intelligence/
 │   ├── 02_data_cleaning_feature_engineering.ipynb
 │   ├── 03_custom_churn_eda.ipynb
 │   ├── 04_customer_segmentation.ipynb
-│   └── 05_churn_prediction_model.ipynb
+│   ├── 05_churn_prediction_model.ipynb
+│   └── 06_revenue_at_risk.ipynb
 │
 ├── pages/
 │
@@ -83,38 +86,57 @@ bank-churn-intelligence/
 
 ---
 
-## Planned Features
+## Implemented Features
 
-#### Business Analytics
+### Data Understanding & Preparation
+- Dataset profiling
+- Data quality assessment
+- Feature engineering
+- Customer behaviour categorisation
 
-- Customer churn overview
-- Churn driver analysis
-- Revenue at risk analysis
+### Exploratory Data Analysis
+- Churn distribution analysis
+- Geography-based churn analysis
+- Demographic churn analysis
+- Product and balance behaviour analysis
+- Customer satisfaction analysis
 
-#### Customer Intelligence
+### Customer Segmentation
+- K-Means clustering
+- Customer persona identification
+- Cluster profiling
 
-- Rule-based customer segmentation
-- K-Means customer personas
-
-#### Predictive Analytics
-
+### Predictive Modelling
 - Logistic Regression
 - Random Forest
 - XGBoost
-- Cox Proportional Hazards Survival Model
+- Churn probability scoring
 
-#### Decision Intelligence
+### Revenue at Risk Analysis
+- Customer value estimation
+- Revenue at risk calculation
+- Risk tier classification
+- Revenue exposure analysis by geography and customer segment
 
-- Churn risk scoring
-- Retention recommendation engine
+## TBD:
 
-#### Dashboard
+### Executive Dashboard
+- Overall churn KPIs
+- Revenue at risk KPIs
+- Churn trend monitoring
 
-- Executive overview
-- Customer segmentation
-- Churn prediction
-- Retention centre
-- Customer explorer
+### Customer Intelligence
+- Customer segmentation explorer
+- Cluster-level insights
+
+### Churn Prediction Centre
+- Individual customer churn prediction
+- Churn probability scoring
+
+### Retention Centre
+- High-risk customer identification
+- Retention recommendations
+- Revenue recovery opportunities
 
 ---
 
@@ -129,11 +151,12 @@ streamlit run app.py
 
 ## Future Improvements
 
-- Deploy the dashboard publicly.
-- Connect to a live database.
-- Add automated reporting.
-- Add real-time customer monitoring.
-- Integrate customer lifetime value estimation.
+- Deploy the application to the cloud
+- Connect to a live database
+- Add automated business reporting
+- Implement real-time customer monitoring
+- Integrate advanced customer lifetime value modelling using transaction-level history
+- Add explainable AI using SHAP to interpret churn predictions
 
 ---
 
