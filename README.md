@@ -25,11 +25,13 @@ The final solution will combine exploratory data analysis, customer segmentation
 
 ### Current Dataset Overview
 
-* 10,000 customer records
-* 18 features
-* No missing values
-* No duplicate records
-* Churn rate: 20.38%
+- 10,000 customer records
+- 18 original features
+- 4 engineered features
+- 1 customer segmentation feature
+- No missing values
+- No duplicate records
+- Churn rate: 20.38%
 
 ### Target Variable
 
@@ -66,9 +68,10 @@ bank-churn-intelligence/
 │
 ├── notebooks/
 │   ├── 01_data_understanding.ipynb
-│   ├── 02_data_cleaning_feature_engineering
+│   ├── 02_data_cleaning_feature_engineering.ipynb
 │   ├── 03_custom_churn_eda.ipynb
-│   └── 04_customer_segmentation.ipynb
+│   ├── 04_customer_segmentation.ipynb
+│   └── 05_churn_prediction_model.ipynb
 │
 ├── pages/
 │
@@ -84,34 +87,34 @@ bank-churn-intelligence/
 
 #### Business Analytics
 
-* Customer churn overview
-* Churn driver analysis
-* Revenue at risk analysis
+- Customer churn overview
+- Churn driver analysis
+- Revenue at risk analysis
 
 #### Customer Intelligence
 
-* Rule-based customer segmentation
-* K-Means customer personas
+- Rule-based customer segmentation
+- K-Means customer personas
 
 #### Predictive Analytics
 
-* Logistic Regression
-* Random Forest
-* XGBoost
-* Cox Proportional Hazards Survival Model
+- Logistic Regression
+- Random Forest
+- XGBoost
+- Cox Proportional Hazards Survival Model
 
 #### Decision Intelligence
 
-* Churn risk scoring
-* Retention recommendation engine
+- Churn risk scoring
+- Retention recommendation engine
 
 #### Dashboard
 
-* Executive overview
-* Customer segmentation
-* Churn prediction
-* Retention centre
-* Customer explorer
+- Executive overview
+- Customer segmentation
+- Churn prediction
+- Retention centre
+- Customer explorer
 
 ---
 
@@ -126,11 +129,11 @@ streamlit run app.py
 
 ## Future Improvements
 
-* Deploy the dashboard publicly.
-* Connect to a live database.
-* Add automated reporting.
-* Add real-time customer monitoring.
-* Integrate customer lifetime value estimation.
+- Deploy the dashboard publicly.
+- Connect to a live database.
+- Add automated reporting.
+- Add real-time customer monitoring.
+- Integrate customer lifetime value estimation.
 
 ---
 
