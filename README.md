@@ -77,6 +77,10 @@ bank-churn-intelligence/
 │   └── 06_revenue_at_risk.ipynb
 │
 ├── pages/
+│   ├── 1_Churn_Analysis.py
+│   ├── 2_Customer_Segments.py
+│   ├── 3_Prediction_Centre.py
+│   └── 4_Retention_Centre.py
 │
 ├── app.py
 ├── requirements.txt
@@ -144,7 +148,7 @@ bank-churn-intelligence/
 
 ```bash
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run Dashboard.py
 ```
 
 ---
