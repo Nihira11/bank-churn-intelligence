@@ -1,11 +1,12 @@
 import streamlit as st
 
 PAGES = [
-    ("Dashboard.py",                 "🏠", "Overview"),
+    ("app.py",                 "🏠", "Overview"),
     ("pages/1_Churn_Analysis.py",    "📊", "Churn Analysis"),
     ("pages/2_Customer_Segments.py", "👥", "Customer Segments"),
     ("pages/3_Prediction_Centre.py", "🔮", "Prediction Centre"),
     ("pages/4_Retention_Centre.py",  "🎯", "Retention Centre"),
+    ("pages/5_Model_Performance.py", "📈", "Model Performance"),
 ]
 
 COMMON_CSS = """
