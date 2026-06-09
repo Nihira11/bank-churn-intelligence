@@ -1,231 +1,200 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
+from utils import render_sidebar, render_topnav, base_layout, COMMON_CSS
+from utils import GOLD, GOLD2, RED, AMBER, STONE, TEXT, CLUSTER_LABELS
 
-st.set_page_config(
-    page_title="Bank Customer Churn Intelligence",
-    layout="wide"
-)
+st.set_page_config(page_title="Bank Churn Intelligence", page_icon="🏦", layout="wide", initial_sidebar_state="expanded")
+st.markdown(COMMON_CSS, unsafe_allow_html=True)
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/revenue_at_risk.csv")
+    df = pd.read_csv("data/churn_predictions.csv")
+    if "RevenueAtRisk" not in df.columns:
+        df["BalanceScore"] = df["Balance"] / df["Balance"].max()
+        df["SalaryScore"]  = df["EstimatedSalary"] / df["EstimatedSalary"].max()
+        df["TenureScore"]  = df["Tenure"] / df["Tenure"].max()
+        df["PointsScore"]  = df["PointEarned"] / df["PointEarned"].max()
+        df["CustomerValueScore"] = 0.40*df["BalanceScore"] + 0.30*df["SalaryScore"] + 0.20*df["TenureScore"] + 0.10*df["PointsScore"]
+        df["EstimatedCustomerValue"] = df["CustomerValueScore"] * df["EstimatedSalary"]
+        df["RevenueAtRisk"] = df["EstimatedCustomerValue"] * df["ChurnProbability"]
+    return df
 
-df = load_data()
+df_full = load_data()
 
-st.title("Bank Customer Churn Intelligence Dashboard")
+# sidebar filters
+def filters():
+    global sel_geo, sel_risk
+    geo_options  = ["All Regions"] + sorted(df_full["Geography"].unique().tolist())
+    risk_options = ["All Risk Tiers", "High Risk", "Medium Risk", "Low Risk"]
+    sel_geo  = st.selectbox("Geography", geo_options,  label_visibility="collapsed", key="dash_geo")
+    sel_risk = st.selectbox("Risk Tier",  risk_options, label_visibility="collapsed", key="dash_risk")
+    df_f = df_full.copy()
+    if sel_geo  != "All Regions":    df_f = df_f[df_f["Geography"]    == sel_geo]
+    if sel_risk != "All Risk Tiers": df_f = df_f[df_f["RiskCategory"] == sel_risk]
+    st.markdown(f"<div style='font-size:0.75rem;color:#57534e;margin-top:12px;'>{len(df_f):,} customers selected</div>", unsafe_allow_html=True)
+    return df_f
 
-st.write(
-    "This dashboard analyses bank customer churn patterns, identifies high-risk customers, "
-    "estimates revenue at risk, and supports data-driven retention decisions."
-)
+sel_geo = "All Regions"; sel_risk = "All Risk Tiers"
+render_sidebar()
 
-# Sidebar filters
-st.sidebar.header("Filters")
+# apply filters manually after sidebar
+df = df_full.copy()
+with st.sidebar:
+    st.markdown("<hr style='margin:16px 0;'>", unsafe_allow_html=True)
+    st.markdown("<div style='font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:#57534e;margin-bottom:8px;'>Filters</div>", unsafe_allow_html=True)
+    sel_geo  = st.selectbox("Geography",  ["All Regions"] + sorted(df_full["Geography"].unique().tolist()),  label_visibility="collapsed", key="dash_geo")
+    sel_risk = st.selectbox("Risk Tier",  ["All Risk Tiers","High Risk","Medium Risk","Low Risk"], label_visibility="collapsed", key="dash_risk")
+    if sel_geo  != "All Regions":    df = df[df["Geography"]    == sel_geo]
+    if sel_risk != "All Risk Tiers": df = df[df["RiskCategory"] == sel_risk]
+    st.markdown(f"<div style='font-size:0.75rem;color:#57534e;margin-top:12px;'>{len(df):,} customers selected</div>", unsafe_allow_html=True)
 
-selected_geography = st.sidebar.multiselect(
-    "Geography",
-    options=sorted(df["Geography"].unique()),
-    default=sorted(df["Geography"].unique())
-)
+# top nav
+render_topnav("Overview")
 
-selected_risk = st.sidebar.multiselect(
-    "Risk Category",
-    options=sorted(df["RiskCategory"].unique()),
-    default=sorted(df["RiskCategory"].unique())
-)
+# header
+col_title, col_badge = st.columns([4,1])
+with col_title:
+    st.markdown('<div class="page-title">Bank Churn Intelligence</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-subtitle">Customer retention analytics · Predictive churn scoring · Revenue risk monitoring</div>', unsafe_allow_html=True)
+with col_badge:
+    st.markdown("<div style='text-align:right;padding-top:6px;'><span style='background:#292524;border:1px solid #44403c;color:#a8a29e;font-size:0.7rem;padding:4px 10px;border-radius:4px;'>LIVE DEMO</span></div>", unsafe_allow_html=True)
+st.markdown("<hr style='margin:12px 0 20px 0;'>", unsafe_allow_html=True)
 
-selected_cluster = st.sidebar.multiselect(
-    "Customer Cluster",
-    options=sorted(df["Cluster"].unique()),
-    default=sorted(df["Cluster"].unique())
-)
+# metrics
+total_customers    = len(df)
+churn_rate         = df["Exited"].mean() * 100
+predicted_churners = int(df["PredictedChurn"].sum())
+high_risk_count    = int((df["RiskCategory"] == "High Risk").sum())
+total_rar          = df["RevenueAtRisk"].sum()
+avg_rar            = df["RevenueAtRisk"].mean()
+high_risk_rar_pct  = (df[df["RiskCategory"]=="High Risk"]["RevenueAtRisk"].sum() / total_rar * 100) if total_rar > 0 else 0
 
-filtered_df = df[
-    (df["Geography"].isin(selected_geography)) &
-    (df["RiskCategory"].isin(selected_risk)) &
-    (df["Cluster"].isin(selected_cluster))
-]
+k1,k2,k3,k4,k5 = st.columns(5)
+for col, label, value, sub, badge in [
+    (k1,"Total Customers",    f"{total_customers:,}",   "dataset scope",     "10K records"),
+    (k2,"Historical Churn",   f"{churn_rate:.1f}%",     "actual churn rate", "1 in 5 customers"),
+    (k3,"Predicted to Churn", f"{predicted_churners:,}","model prediction",  "XGBoost · ROC-AUC 0.88"),
+    (k4,"High-Risk Customers",f"{high_risk_count:,}",   "churn prob ≥ 70%",  f"{high_risk_rar_pct:.0f}% of revenue risk"),
+    (k5,"Revenue at Risk",    f"${total_rar/1e6:.1f}M", "estimated exposure",f"avg ${avg_rar:,.0f} / customer"),
+]:
+    with col:
+        st.markdown(f'<div class="kpi-card"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div><div class="kpi-sub">{sub}</div><div class="kpi-badge">{badge}</div></div>', unsafe_allow_html=True)
 
-# Executive overview
-st.subheader("Executive Overview")
+st.markdown("<br>", unsafe_allow_html=True)
 
-total_customers = len(filtered_df)
-actual_churn_rate = filtered_df["Exited"].mean() * 100
-avg_churn_probability = filtered_df["ChurnProbability"].mean() * 100
-high_risk_customers = (filtered_df["RiskCategory"] == "High Risk").sum()
-total_revenue_at_risk = filtered_df["RevenueAtRisk"].sum()
-avg_revenue_at_risk = filtered_df["RevenueAtRisk"].mean()
+# ── Row 1 ─────────────────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">Churn Overview</div>', unsafe_allow_html=True)
+c1,c2,c3 = st.columns(3)
 
-col1, col2, col3 = st.columns(3)
-col4, col5, col6 = st.columns(3)
-
-col1.metric("Total Customers", f"{total_customers:,}")
-col2.metric("Actual Churn Rate", f"{actual_churn_rate:.2f}%")
-col3.metric("Avg Churn Probability", f"{avg_churn_probability:.2f}%")
-col4.metric("High Risk Customers", f"{high_risk_customers:,}")
-col5.metric("Total Revenue at Risk", f"${total_revenue_at_risk:,.0f}")
-col6.metric("Avg Revenue at Risk", f"${avg_revenue_at_risk:,.0f}")
-
-st.divider()
-
-# Risk tier summary
-st.subheader("Risk Tier Summary")
-
-tier_summary = (
-    filtered_df.groupby("RiskCategory")
-    .agg(
-        CustomerCount=("RevenueAtRisk", "count"),
-        TotalRevenueAtRisk=("RevenueAtRisk", "sum"),
-        AvgRevenueAtRisk=("RevenueAtRisk", "mean"),
-        AvgChurnProbability=("ChurnProbability", "mean")
-    )
-    .reset_index()
-)
-
-tier_summary["RevenueAtRiskShare"] = (
-    tier_summary["TotalRevenueAtRisk"] / tier_summary["TotalRevenueAtRisk"].sum() * 100
-)
-
-tier_summary = tier_summary.sort_values(
-    by="TotalRevenueAtRisk",
-    ascending=False
-)
-
-st.dataframe(
-    tier_summary.style.format({
-        "TotalRevenueAtRisk": "${:,.0f}",
-        "AvgRevenueAtRisk": "${:,.0f}",
-        "AvgChurnProbability": "{:.2%}",
-        "RevenueAtRiskShare": "{:.2f}%"
-    }),
-    use_container_width=True
-)
-
-st.divider()
-
-# Charts row 1
-col_left, col_right = st.columns(2)
-
-with col_left:
-    churn_counts = filtered_df["Exited"].value_counts().reset_index()
-    churn_counts.columns = ["Exited", "Count"]
-    churn_counts["Customer Status"] = churn_counts["Exited"].map({
-        0: "Retained",
-        1: "Churned"
-    })
-
-    fig = px.pie(
-        churn_counts,
-        names="Customer Status",
-        values="Count",
-        title="Customer Churn Distribution",
-        hole=0.4
-    )
-
+with c1:
+    counts = df["Exited"].value_counts().reset_index()
+    counts.columns = ["Status","Count"]
+    counts["Status"] = counts["Status"].map({0:"Retained",1:"Churned"})
+    fig = go.Figure(go.Pie(
+        labels=counts["Status"], values=counts["Count"], hole=0.65,
+        marker=dict(colors=["#44403c",GOLD], line=dict(color="#1c1917",width=2)),
+        textinfo="percent", textfont=dict(color="#fef3c7",size=12),
+        hovertemplate="%{label}: %{value:,}<extra></extra>",
+    ))
+    fig.add_annotation(text=f"<b>{churn_rate:.1f}%</b><br><span style='font-size:10px'>churn</span>",
+                       x=0.5,y=0.5,showarrow=False,font=dict(color=GOLD2,size=16))
+    l = base_layout("Retained vs Churned")
+    l["showlegend"]=True
+    l["legend"]=dict(font=dict(color=TEXT),bgcolor="rgba(0,0,0,0)",x=0.5,xanchor="center",y=-0.08,orientation="h")
+    fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-with col_right:
-    risk_summary = (
-        filtered_df.groupby("RiskCategory")["RevenueAtRisk"]
-        .sum()
-        .reset_index()
-        .sort_values(by="RevenueAtRisk", ascending=False)
-    )
-
-    fig = px.bar(
-        risk_summary,
-        x="RiskCategory",
-        y="RevenueAtRisk",
-        title="Revenue at Risk by Risk Category",
-        text_auto=",.0f"
-    )
-
-    fig.update_layout(
-        xaxis_title="Risk Category",
-        yaxis_title="Revenue at Risk"
-    )
-
+with c2:
+    risk_order = ["High Risk","Medium Risk","Low Risk"]
+    rc = df["RiskCategory"].value_counts().reindex(risk_order).reset_index()
+    rc.columns = ["RiskCategory","Count"]
+    fig = go.Figure()
+    for _, row in rc.iterrows():
+        c = {"High Risk":RED,"Medium Risk":AMBER,"Low Risk":GOLD}.get(row["RiskCategory"],GOLD)
+        fig.add_trace(go.Bar(x=[row["RiskCategory"]],y=[row["Count"]],name=row["RiskCategory"],
+                             marker_color=c,text=[f"{int(row['Count']):,}"],textposition="outside",
+                             textfont=dict(color="#e7e5e4",size=11),cliponaxis=False,
+                             hovertemplate="%{x}: %{y:,}<extra></extra>"))
+    l = base_layout("Customers by Risk Tier"); l["showlegend"]=False; l["yaxis"]["title"]="Customers"
+    fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-# Charts row 2
-col_left, col_right = st.columns(2)
-
-with col_left:
-    geo_summary = (
-        filtered_df.groupby("Geography")["RevenueAtRisk"]
-        .sum()
-        .reset_index()
-        .sort_values(by="RevenueAtRisk", ascending=False)
-    )
-
-    fig = px.bar(
-        geo_summary,
-        x="Geography",
-        y="RevenueAtRisk",
-        title="Revenue at Risk by Geography",
-        text_auto=",.0f"
-    )
-
-    fig.update_layout(
-        xaxis_title="Geography",
-        yaxis_title="Revenue at Risk"
-    )
-
+with c3:
+    geo_rar = df.groupby("Geography")["RevenueAtRisk"].sum().reset_index().sort_values("RevenueAtRisk",ascending=True)
+    geo_rar["RAR_M"] = geo_rar["RevenueAtRisk"]/1e6
+    x_max = geo_rar["RAR_M"].max()*1.3
+    fig = go.Figure(go.Bar(
+        x=geo_rar["RAR_M"],y=geo_rar["Geography"],orientation="h",
+        marker=dict(color=geo_rar["RAR_M"],colorscale=[[0,"#44403c"],[1,GOLD]],showscale=False),
+        text=geo_rar["RAR_M"].apply(lambda x:f"${x:.1f}M"),textposition="outside",
+        textfont=dict(color="#e7e5e4",size=11),cliponaxis=False,
+        hovertemplate="%{y}: $%{x:.1f}M<extra></extra>",
+    ))
+    l = base_layout("Revenue at Risk by Country"); l["xaxis"]["title"]="$M"; l["xaxis"]["range"]=[0,x_max]
+    l["yaxis"]["showgrid"]=False; l["margin"]=dict(t=40,b=32,l=8,r=90)
+    fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-with col_right:
-    cluster_summary = (
-        filtered_df.groupby("Cluster")["RevenueAtRisk"]
-        .sum()
-        .reset_index()
-        .sort_values(by="RevenueAtRisk", ascending=False)
-    )
+# ── Row 2 ─────────────────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">Risk Distribution</div>', unsafe_allow_html=True)
+c4,c5 = st.columns([1.3,1])
 
-    fig = px.bar(
-        cluster_summary,
-        x="Cluster",
-        y="RevenueAtRisk",
-        title="Revenue at Risk by Customer Cluster",
-        text_auto=",.0f"
-    )
-
-    fig.update_layout(
-        xaxis_title="Customer Cluster",
-        yaxis_title="Revenue at Risk"
-    )
-
+with c4:
+    fig = go.Figure(go.Histogram(
+        x=df["ChurnProbability"],nbinsx=40,
+        marker=dict(color=GOLD,opacity=0.85,line=dict(color="#1c1917",width=0.5)),
+        hovertemplate="Prob %{x:.2f}: %{y:,} customers<extra></extra>",
+    ))
+    fig.add_vline(x=0.30,line_dash="dot",line_color=AMBER,line_width=1.5,annotation_text="Medium",annotation_font_color=AMBER,annotation_font_size=10)
+    fig.add_vline(x=0.70,line_dash="dot",line_color=RED,line_width=1.5,annotation_text="High",annotation_font_color=RED,annotation_font_size=10)
+    l = base_layout("Churn Probability Distribution"); l["xaxis"]["title"]="Churn Probability"; l["yaxis"]["title"]="Customers"
+    l["bargap"]=0.04; l["margin"]=dict(t=40,b=32,l=8,r=20)
+    fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-st.divider()
+with c5:
+    df["Persona"] = df["Cluster"].map(CLUSTER_LABELS)
+    from utils import CLUSTER_COLORS
+    persona_rar = df.groupby("Persona")["RevenueAtRisk"].sum().reset_index().sort_values("RevenueAtRisk",ascending=True)
+    persona_rar["RAR_M"] = persona_rar["RevenueAtRisk"]/1e6
+    x_max2 = persona_rar["RAR_M"].max()*1.3
+    fig = go.Figure(go.Bar(
+        x=persona_rar["RAR_M"],y=persona_rar["Persona"],orientation="h",
+        marker=dict(color=persona_rar["RAR_M"],colorscale=[[0,"#44403c"],[1,GOLD]],showscale=False),
+        text=persona_rar["RAR_M"].apply(lambda x:f"${x:.1f}M"),textposition="outside",
+        textfont=dict(color="#e7e5e4",size=11),cliponaxis=False,
+        hovertemplate="%{y}: $%{x:.1f}M<extra></extra>",
+    ))
+    l = base_layout("Revenue at Risk by Customer Persona"); l["xaxis"]["title"]="$M"; l["xaxis"]["range"]=[0,x_max2]
+    l["yaxis"]["showgrid"]=False; l["margin"]=dict(t=40,b=32,l=8,r=90)
+    fig.update_layout(**l)
+    st.plotly_chart(fig, use_container_width=True)
 
-# Top customers
-st.subheader("Top High-Value At-Risk Customers")
+# ── Row 3 ─────────────────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">Key Churn Drivers</div>', unsafe_allow_html=True)
+c6,c7,c8 = st.columns(3)
 
-top_customers = (
-    filtered_df.sort_values(by="RevenueAtRisk", ascending=False)
-    [[
-        "Geography",
-        "Gender",
-        "Age",
-        "Balance",
-        "EstimatedSalary",
-        "ChurnProbability",
-        "RiskCategory",
-        "Cluster",
-        "EstimatedCustomerValue",
-        "RevenueAtRisk"
-    ]]
-    .head(10)
-)
+with c6:
+    a = df.groupby("AgeGroup")["Exited"].mean().reset_index(); a["pct"]=a["Exited"]*100
+    fig = go.Figure(go.Bar(x=a["AgeGroup"].astype(str),y=a["pct"],marker_color=GOLD,opacity=0.9,
+        text=a["pct"].apply(lambda x:f"{x:.1f}%"),textposition="outside",textfont=dict(color="#e7e5e4",size=10),cliponaxis=False))
+    l = base_layout("Churn Rate by Age Group"); l["yaxis"]["title"]="Churn Rate (%)"; l["margin"]=dict(t=40,b=32,l=8,r=20)
+    fig.update_layout(**l); st.plotly_chart(fig, use_container_width=True)
 
-st.dataframe(
-    top_customers.style.format({
-        "Balance": "${:,.0f}",
-        "EstimatedSalary": "${:,.0f}",
-        "ChurnProbability": "{:.2%}",
-        "EstimatedCustomerValue": "${:,.0f}",
-        "RevenueAtRisk": "${:,.0f}"
-    }),
-    use_container_width=True
-)
+with c7:
+    g = df.groupby("Geography")["Exited"].mean().reset_index().sort_values("Exited",ascending=False); g["pct"]=g["Exited"]*100
+    fig = go.Figure(go.Bar(x=g["Geography"],y=g["pct"],marker_color=[RED,AMBER,GOLD][:len(g)],
+        text=g["pct"].apply(lambda x:f"{x:.1f}%"),textposition="outside",textfont=dict(color="#e7e5e4",size=10),cliponaxis=False))
+    l = base_layout("Churn Rate by Geography"); l["yaxis"]["title"]="Churn Rate (%)"; l["margin"]=dict(t=40,b=32,l=8,r=20)
+    fig.update_layout(**l); st.plotly_chart(fig, use_container_width=True)
+
+with c8:
+    p = df.groupby("NumOfProducts")["Exited"].mean().reset_index(); p["pct"]=p["Exited"]*100
+    fig = go.Figure(go.Bar(x=p["NumOfProducts"].astype(str),y=p["pct"],marker_color=GOLD,opacity=0.9,
+        text=p["pct"].apply(lambda x:f"{x:.1f}%"),textposition="outside",textfont=dict(color="#e7e5e4",size=10),cliponaxis=False))
+    l = base_layout("Churn Rate by No. of Products"); l["yaxis"]["title"]="Churn Rate (%)"; l["margin"]=dict(t=40,b=32,l=8,r=20)
+    fig.update_layout(**l); st.plotly_chart(fig, use_container_width=True)
+
+st.markdown("<hr style='margin:32px 0 16px 0;'>", unsafe_allow_html=True)
+st.markdown("<div style='display:flex;justify-content:space-between;'><span style='font-size:0.72rem;color:#44403c;'>Bank Churn Intelligence · Portfolio Project</span><span style='font-size:0.72rem;color:#44403c;'>XGBoost · Scikit-learn · Streamlit · Plotly</span></div>", unsafe_allow_html=True)
