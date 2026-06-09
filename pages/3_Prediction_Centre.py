@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import math
 import plotly.graph_objects as go
 from utils import render_sidebar, render_topnav, base_layout, COMMON_CSS
 from utils import GOLD, GOLD2, RED, AMBER, STONE, TEXT, CLUSTER_LABELS
@@ -17,8 +18,34 @@ def load_data():
 def load_model():
     return joblib.load("models/churn_prediction_model.joblib")
 
-df    = load_data()
-model = load_model()
+@st.cache_resource
+def load_shap():
+    explainer     = joblib.load("models/shap_explainer.pkl")
+    feature_names = joblib.load("models/shap_feature_names.pkl")
+    return explainer, feature_names
+
+df                       = load_data()
+model                    = load_model()
+explainer, feature_names = load_shap()
+preprocessor             = model.named_steps["preprocessor"]
+
+# clean feature names for display
+def clean_name(f):
+    f = f.replace("Geography_", "Geography: ")
+    f = f.replace("Gender_", "Gender: ")
+    f = f.replace("CardType_", "Card: ")
+    f = f.replace("EstimatedSalary", "Est. Salary")
+    f = f.replace("IsActiveMember", "Active Member")
+    f = f.replace("NumOfProducts", "Num Products")
+    f = f.replace("SatisfactionScore", "Satisfaction")
+    f = f.replace("PointEarned", "Points Earned")
+    f = f.replace("HasCrCard", "Has Credit Card")
+    return f
+
+clean_feature_names = [clean_name(f) for f in feature_names]
+
+# baseline probability via sigmoid
+baseline_prob = 1 / (1 + math.exp(-float(explainer.expected_value)))
 
 render_sidebar()
 render_topnav("Prediction Centre")
@@ -27,7 +54,7 @@ st.markdown('<div class="page-title">Prediction Centre</div>', unsafe_allow_html
 st.markdown('<div class="page-subtitle">Input a customer profile · Live churn probability from the XGBoost model · Updates instantly</div>', unsafe_allow_html=True)
 st.markdown("<hr style='margin:12px 0 20px 0;'>", unsafe_allow_html=True)
 
-# layout
+# ── Layout ────────────────────────────────────────────────────────────────────
 left, right = st.columns([1.2, 1])
 
 with left:
@@ -40,9 +67,9 @@ with left:
         tenure       = st.slider("Tenure (years)", 0, 10, 5)
         num_products = st.selectbox("Number of Products", [1, 2, 3, 4], index=1)
     with r1c2:
-        balance = st.number_input("Account Balance ($)", min_value=0.0, max_value=300000.0, value=75000.0, step=1000.0)
-        salary  = st.number_input("Estimated Salary ($)", min_value=0.0, max_value=200000.0, value=80000.0, step=1000.0)
-        points  = st.slider("Points Earned", 100, 1000, 500)
+        balance   = st.number_input("Account Balance ($)", min_value=0.0, max_value=300000.0, value=75000.0, step=1000.0)
+        salary    = st.number_input("Estimated Salary ($)", min_value=0.0, max_value=200000.0, value=80000.0, step=1000.0)
+        points    = st.slider("Points Earned", 100, 1000, 500)
         sat_score = st.selectbox("Satisfaction Score (1–5)", [1, 2, 3, 4, 5], index=2)
 
     r2c1, r2c2, r2c3 = st.columns(3)
@@ -55,7 +82,7 @@ with left:
     with r3c2: is_active   = st.selectbox("Active Member", ["Yes", "No"])
     with r3c3: cluster     = st.selectbox("Customer Segment", list(CLUSTER_LABELS.values()))
 
-# build input & run model
+# ── Build input & run model ───────────────────────────────────────────────────
 cluster_num = [k for k, v in CLUSTER_LABELS.items() if v == cluster][0]
 input_data  = pd.DataFrame([{
     "CreditScore":       credit_score,
@@ -74,16 +101,23 @@ input_data  = pd.DataFrame([{
     "Cluster":           cluster_num,
 }])
 
-churn_prob  = model.predict_proba(input_data)[0][1]
-churn_pred  = model.predict(input_data)[0]
-risk_label  = "High Risk"   if churn_prob >= 0.70 else "Medium Risk" if churn_prob >= 0.30 else "Low Risk"
-risk_color  = RED           if risk_label == "High Risk" else AMBER if risk_label == "Medium Risk" else "#16a34a"
+churn_prob = model.predict_proba(input_data)[0][1]
+churn_pred = model.predict(input_data)[0]
+risk_label = "High Risk"  if churn_prob >= 0.70 else "Medium Risk" if churn_prob >= 0.30 else "Low Risk"
+risk_color = RED          if risk_label == "High Risk" else AMBER   if risk_label == "Medium Risk" else "#16a34a"
 
-# right panel: results
+# SHAP for this individual
+input_transformed = preprocessor.transform(input_data)
+shap_vals         = explainer.shap_values(input_transformed)[0]
+shap_df = pd.DataFrame({
+    "feature": clean_feature_names,
+    "shap":    shap_vals,
+}).sort_values("shap", key=abs, ascending=True).tail(10)
+
+# ── Right panel ───────────────────────────────────────────────────────────────
 with right:
     st.markdown('<div class="section-header">Prediction Result</div>', unsafe_allow_html=True)
 
-    # gauge
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=churn_prob * 100,
@@ -106,7 +140,6 @@ with right:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # risk badge
     st.markdown(
         f"<div style='text-align:center;margin:-10px 0 16px 0;'>"
         f"<span style='background:{risk_color}22;color:{risk_color};border:1px solid {risk_color}66;"
@@ -115,12 +148,11 @@ with right:
         unsafe_allow_html=True,
     )
 
-    # stat cards
     s1, s2, s3 = st.columns(3)
     for col, label, val, c in [
-        (s1, "Churn Probability", f"{churn_prob*100:.1f}%",              risk_color),
+        (s1, "Churn Probability", f"{churn_prob*100:.1f}%",                   risk_color),
         (s2, "Predicted Outcome", "Will Churn" if churn_pred else "Will Stay", RED if churn_pred else "#16a34a"),
-        (s3, "Risk Category",     risk_label,                            risk_color),
+        (s3, "Risk Category",     risk_label,                                  risk_color),
     ]:
         with col:
             st.markdown(
@@ -133,56 +165,63 @@ with right:
                 unsafe_allow_html=True,
             )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+# ── SHAP waterfall ────────────────────────────────────────────────────────────
+st.markdown("<br>", unsafe_allow_html=True)
+st.markdown('<div class="section-header">SHAP Feature Contributions — What\'s Driving This Prediction?</div>', unsafe_allow_html=True)
 
-    # drivers
-    st.markdown('<div class="section-header">What\'s Driving This?</div>', unsafe_allow_html=True)
+shap_colors = [RED if v > 0 else "#16a34a" for v in shap_df["shap"]]
 
-    drivers = []
-    if age > 55:
-        drivers.append(("Age",       f"{age} yrs",   "Older customers churn significantly more",         RED))
-    if num_products >= 3:
-        drivers.append(("Products",  str(num_products), "3+ products is strongly linked to high churn",  RED))
-    if is_active == "No":
-        drivers.append(("Activity",  "Inactive",     "Inactive members churn at 2× the rate",            RED))
-    if geography == "Germany":
-        drivers.append(("Geography", "Germany",      "Highest churn region — 32%+ churn rate",           AMBER))
-    if balance == 0:
-        drivers.append(("Balance",   "$0",           "Zero balance linked to elevated churn",             AMBER))
-    if gender == "Female":
-        drivers.append(("Gender",    "Female",       "Female customers churn slightly more",              AMBER))
-    if tenure <= 2:
-        drivers.append(("Tenure",    f"{tenure} yrs","New customers carry higher churn risk",             AMBER))
-    if num_products == 2 and is_active == "Yes":
-        drivers.append(("Products",  "2 + Active",   "Optimal combo — associated with lowest churn",     "#16a34a"))
-    if geography != "Germany" and age < 40:
-        drivers.append(("Profile",   "Young + non-DE","Lower-risk demographic profile",                  "#16a34a"))
-    if credit_score >= 750:
-        drivers.append(("Credit",    f"{credit_score}","High credit score — lower financial stress risk","#16a34a"))
+fig = go.Figure(go.Bar(
+    x=shap_df["shap"],
+    y=shap_df["feature"],
+    orientation="h",
+    marker_color=shap_colors,
+    text=shap_df["shap"].apply(lambda x: f"+{x:.3f}" if x > 0 else f"{x:.3f}"),
+    textposition="outside",
+    textfont=dict(color="#e7e5e4", size=11),
+    cliponaxis=False,
+    hovertemplate="<b>%{y}</b><br>SHAP value: %{x:.4f}<br>"
+                  "Positive = increases churn risk<br>"
+                  "Negative = decreases churn risk<extra></extra>",
+))
+fig.add_vline(x=0, line_color="#78716c", line_width=1)
 
-    if drivers:
-        for feat, val, reason, color in drivers[:5]:
-            st.markdown(
-                f"<div style='display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;"
-                f"background:#292524;border:1px solid #44403c;border-left:3px solid {color};"
-                f"border-radius:6px;padding:10px 12px;'>"
-                f"<div style='min-width:90px;font-size:0.7rem;font-weight:600;color:{color};"
-                f"text-transform:uppercase;letter-spacing:0.06em;padding-top:1px;'>"
-                f"{feat}<br><span style='font-size:0.85rem;'>{val}</span></div>"
-                f"<div style='font-size:0.78rem;color:#a8a29e;line-height:1.5;'>{reason}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
-    else:
-        st.markdown('<div class="insight-box">✓ No major risk flags detected for this customer profile.</div>', unsafe_allow_html=True)
+x_abs_max = shap_df["shap"].abs().max()
+l = base_layout("")
+l["xaxis"]["title"]    = "SHAP Value (impact on churn probability)"
+l["xaxis"]["range"]    = [-x_abs_max * 1.45, x_abs_max * 1.45]
+l["yaxis"]["showgrid"] = False
+l["height"]   = 380
+l["margin"]   = dict(t=20, b=40, l=8, r=90)
+l["showlegend"] = False
+fig.update_layout(**l)
+st.plotly_chart(fig, use_container_width=True)
 
-# similar customers
+col_a, col_b = st.columns(2)
+with col_a:
+    st.markdown(
+        f"<div class='insight-box'>"
+        f"<b style='color:{RED};'>Red bars</b> → features pushing this customer <b>toward churn</b>. "
+        f"The longer the bar, the stronger the push. "
+        f"SHAP values are additive — they sum to explain the gap from the model baseline.</div>",
+        unsafe_allow_html=True,
+    )
+with col_b:
+    st.markdown(
+        f"<div class='insight-box'>"
+        f"<b style='color:#16a34a;'>Green bars</b> → features pulling this customer <b>away from churn</b>. "
+        f"Top 10 features by absolute impact shown. "
+        f"Model baseline (avg churn prob): <b style='color:{GOLD2};'>{baseline_prob:.1%}</b></div>",
+        unsafe_allow_html=True,
+    )
+
+# ── Similar customers ─────────────────────────────────────────────────────────
 st.markdown('<div class="section-header">Similar Customers in Dataset</div>', unsafe_allow_html=True)
 
 age_range = (age - 5, age + 5)
 similar = df[
     (df["Age"].between(*age_range)) &
-    (df["Geography"]    == geography) &
+    (df["Geography"]     == geography) &
     (df["NumOfProducts"] == num_products)
 ].copy()
 
@@ -227,9 +266,8 @@ if len(similar) > 0:
     fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-    # comparison insight
-    diff = churn_prob*100 - sim_churn
-    direction = "above" if diff > 0 else "below"
+    diff       = churn_prob*100 - sim_churn
+    direction  = "above" if diff > 0 else "below"
     diff_color = RED if diff > 5 else "#16a34a" if diff < -5 else AMBER
     st.markdown(
         f'<div class="insight-box">⚡ This customer\'s predicted churn probability is '
@@ -244,6 +282,6 @@ st.markdown("<hr style='margin:32px 0 16px 0;'>", unsafe_allow_html=True)
 st.markdown(
     "<div style='display:flex;justify-content:space-between;'>"
     "<span style='font-size:0.72rem;color:#44403c;'>Bank Churn Intelligence · Prediction Centre</span>"
-    "<span style='font-size:0.72rem;color:#44403c;'>XGBoost · Scikit-learn · Streamlit · Plotly</span>"
+    "<span style='font-size:0.72rem;color:#44403c;'>XGBoost · SHAP · Scikit-learn · Streamlit · Plotly</span>"
     "</div>", unsafe_allow_html=True,
 )
