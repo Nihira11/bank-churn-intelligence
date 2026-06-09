@@ -61,7 +61,7 @@ i1,i2,i3 = st.columns(3)
 top_g = df.groupby("Gender")["Exited"].mean().idxmax(); top_g_pct = df.groupby("Gender")["Exited"].mean().max()*100
 top_a = df.groupby("AgeGroup")["Exited"].mean().idxmax(); top_a_pct = df.groupby("AgeGroup")["Exited"].mean().max()*100
 top_geo = df.groupby("Geography")["Exited"].mean().idxmax(); top_geo_pct = df.groupby("Geography")["Exited"].mean().max()*100
-with i1: st.markdown(f'<div class="insight-box">⚡ <b>{top_g}</b> customers churn at <b>{top_g_pct:.1f}%</b> — higher than the opposite group. Gender may interact with product usage and complaint behaviour.</div>', unsafe_allow_html=True)
+with i1: st.markdown(f'<div class="insight-box">⚡ <b>{top_g}</b> customers churn at <b>{top_g_pct:.1f}%</b> – higher than the opposite group. Gender may interact with product usage and complaint behaviour.</div>', unsafe_allow_html=True)
 with i2: st.markdown(f'<div class="insight-box">⚡ The <b>{top_a}</b> age group has the highest churn at <b>{top_a_pct:.1f}%</b>. Older customers may have different financial needs or find better alternatives.</div>', unsafe_allow_html=True)
 with i3: st.markdown(f'<div class="insight-box">⚡ <b>{top_geo}</b> has the highest churn at <b>{top_geo_pct:.1f}%</b>. Regional product fit or local competition may be key drivers.</div>', unsafe_allow_html=True)
 
@@ -98,7 +98,7 @@ comp_pct = df[df["Complain"]==1]["Exited"].mean()*100; no_comp_pct = df[df["Comp
 sat_diff = (df.groupby("SatisfactionScore")["Exited"].mean().max() - df.groupby("SatisfactionScore")["Exited"].mean().min())*100
 with i4: st.markdown(f'<div class="insight-box">⚡ Inactive customers churn at <b>{inactive_pct:.1f}%</b> vs <b>{active_pct:.1f}%</b> for active members. Re-engagement campaigns could significantly reduce attrition.</div>', unsafe_allow_html=True)
 with i5: st.markdown(f'<div class="insight-box">⚡ Customers who complained churn at <b>{comp_pct:.1f}%</b> vs <b>{no_comp_pct:.1f}%</b>. Complaint resolution is the single highest-leverage retention action.</div>', unsafe_allow_html=True)
-with i6: st.markdown(f'<div class="insight-box">⚡ Satisfaction score has only a <b>{sat_diff:.1f}pp</b> spread — it\'s a weak standalone predictor of churn in this dataset.</div>', unsafe_allow_html=True)
+with i6: st.markdown(f'<div class="insight-box">⚡ Satisfaction score has only a <b>{sat_diff:.1f}pp</b> spread – it\'s a weak standalone predictor of churn in this dataset.</div>', unsafe_allow_html=True)
 
 # section 3
 st.markdown('<div class="section-header">Product & Balance Churn Patterns</div>', unsafe_allow_html=True)
@@ -135,7 +135,7 @@ top_bal = df.groupby("BalanceGroup")["Exited"].mean().idxmax(); top_bal_pct = df
 card_diff = (df.groupby("CardType")["Exited"].mean().max() - df.groupby("CardType")["Exited"].mean().min())*100
 with i7: st.markdown(f'<div class="insight-box">⚡ 2-product customers churn at just <b>{p2:.1f}%</b>, but 3+ product customers spike to <b>{p3:.1f}%</b>+. More products don\'t mean more loyalty.</div>', unsafe_allow_html=True)
 with i8: st.markdown(f'<div class="insight-box">⚡ The <b>{top_bal}</b> balance group has the highest churn at <b>{top_bal_pct:.1f}%</b>. These customers represent the most significant revenue risk.</div>', unsafe_allow_html=True)
-with i9: st.markdown(f'<div class="insight-box">⚡ Card type shows only a <b>{card_diff:.1f}pp</b> churn spread — it\'s not a strong discriminator. Behavioural factors matter more.</div>', unsafe_allow_html=True)
+with i9: st.markdown(f'<div class="insight-box">⚡ Card type shows only a <b>{card_diff:.1f}pp</b> churn spread – it\'s not a strong discriminator. Behavioural factors matter more.</div>', unsafe_allow_html=True)
 
 # heatmap
 st.markdown('<div class="section-header">Age × Balance Churn Heatmap</div>', unsafe_allow_html=True)
@@ -154,7 +154,7 @@ l = base_layout("Churn Rate (%) by Age Group and Balance Group")
 l["height"]=300; l["margin"]=dict(t=40,b=20,l=8,r=8)
 fig.update_layout(**l)
 st.plotly_chart(fig, use_container_width=True)
-st.markdown('<div class="insight-box">⚡ The heatmap reveals which <b>age × balance combinations</b> carry the highest churn risk. High-balance older customers are the most financially exposed segment — primary targets for personalised retention outreach.</div>', unsafe_allow_html=True)
+st.markdown('<div class="insight-box">⚡ The heatmap reveals which <b>age × balance combinations</b> carry the highest churn risk. High-balance older customers are the most financially exposed segment – primary targets for personalised retention outreach.</div>', unsafe_allow_html=True)
 
 st.markdown("<hr style='margin:32px 0 16px 0;'>", unsafe_allow_html=True)
 st.markdown("<div style='display:flex;justify-content:space-between;'><span style='font-size:0.72rem;color:#44403c;'>Bank Churn Intelligence · Churn Analysis</span><span style='font-size:0.72rem;color:#44403c;'>XGBoost · Scikit-learn · Streamlit · Plotly</span></div>", unsafe_allow_html=True)

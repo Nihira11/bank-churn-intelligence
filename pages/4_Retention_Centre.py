@@ -160,7 +160,7 @@ strategies = [
             "German-language customer service and communications",
             "Local partnership programs or community banking initiatives",
         ],
-        "expected": "Germany churn at 32% vs 16% in France/Spain — regional strategy needed",
+        "expected": "Germany churn at 32% vs 16% in France/Spain – regional strategy needed",
     },
     {
         "segment":  "Complaint Resolution",
@@ -173,7 +173,7 @@ strategies = [
             "Post-resolution follow-up survey and retention offer",
             "Root cause analysis to fix systemic complaint drivers",
         ],
-        "expected": "Complained customers churn at 99.5% — resolution is the #1 lever",
+        "expected": "Complained customers churn at 99.5% – resolution is the #1 lever",
     },
 ]
 

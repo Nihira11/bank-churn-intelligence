@@ -147,7 +147,7 @@ with c1:
             name=f"{name} (AUC={auc:.3f})",
             line=dict(color=MODEL_COLORS[name], width=2.5 if name == "XGBoost" else 1.5),
         ))
-    l = base_layout("ROC Curve — All Models")
+    l = base_layout("ROC Curve – All Models")
     l["xaxis"]["title"] = "False Positive Rate"
     l["yaxis"]["title"] = "True Positive Rate"
     l["xaxis"]["range"] = [0, 1]
@@ -242,7 +242,7 @@ st.markdown(
     f'and F1 Score of <b>{xgb["F1 Score"]:.3f}</b>, outperforming Logistic Regression '
     f'(ROC-AUC {lr["ROC-AUC"]:.3f}) across all metrics. '
     f'The confusion matrix shows XGBoost correctly identifies the most churners (true positives) '
-    f'while keeping false positives low — critical for targeting retention campaigns efficiently.</div>',
+    f'while keeping false positives low – critical for targeting retention campaigns efficiently.</div>',
     unsafe_allow_html=True,
 )
 

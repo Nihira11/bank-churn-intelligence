@@ -167,7 +167,7 @@ with right:
 
 # ── SHAP waterfall ────────────────────────────────────────────────────────────
 st.markdown("<br>", unsafe_allow_html=True)
-st.markdown('<div class="section-header">SHAP Feature Contributions — What\'s Driving This Prediction?</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-header">SHAP Feature Contributions – What\'s Driving This Prediction?</div>', unsafe_allow_html=True)
 
 shap_colors = [RED if v > 0 else "#16a34a" for v in shap_df["shap"]]
 
@@ -203,7 +203,7 @@ with col_a:
         f"<div class='insight-box'>"
         f"<b style='color:{RED};'>Red bars</b> → features pushing this customer <b>toward churn</b>. "
         f"The longer the bar, the stronger the push. "
-        f"SHAP values are additive — they sum to explain the gap from the model baseline.</div>",
+        f"SHAP values are additive – they sum to explain the gap from the model baseline.</div>",
         unsafe_allow_html=True,
     )
 with col_b:
@@ -258,7 +258,7 @@ if len(similar) > 0:
         annotation_text=f"This customer ({churn_prob*100:.0f}%)",
         annotation_font_color=risk_color, annotation_font_size=11,
     )
-    l = base_layout("Churn Probability Distribution — Similar Customers")
+    l = base_layout("Churn Probability Distribution – Similar Customers")
     l["xaxis"]["title"] = "Churn Probability"
     l["yaxis"]["title"] = "Count"
     l["height"]  = 280

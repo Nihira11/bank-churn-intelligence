@@ -138,7 +138,7 @@ fig.update_layout(
     title=dict(text="Normalised Segment Characteristics",font=dict(color="#e7e5e4",size=13),x=0,xanchor="left"),
 )
 st.plotly_chart(fig, use_container_width=True)
-st.markdown('<div class="insight-box">⚡ The radar shows each segment\'s relative profile across 6 dimensions. <b>Older At-Risk</b> scores highest on churn — prioritise for retention. <b>Inactive High-Balance</b> has high balance but low activity — a re-engagement opportunity. <b>Active High-Balance</b> is the healthiest segment.</div>', unsafe_allow_html=True)
+st.markdown('<div class="insight-box">⚡ The radar shows each segment\'s relative profile across 6 dimensions. <b>Older At-Risk</b> scores highest on churn – prioritise for retention. <b>Inactive High-Balance</b> has high balance but low activity – a re-engagement opportunity. <b>Active High-Balance</b> is the healthiest segment.</div>', unsafe_allow_html=True)
 
 # churn breakdown
 st.markdown('<div class="section-header">Churn Breakdown Within Segments</div>', unsafe_allow_html=True)

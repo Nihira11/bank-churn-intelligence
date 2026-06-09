@@ -1,11 +1,17 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from utils import render_sidebar, render_topnav, base_layout, COMMON_CSS
+from utils import render_topnav, base_layout, COMMON_CSS
 from utils import GOLD, GOLD2, RED, AMBER, STONE, TEXT, CLUSTER_LABELS
 
-st.set_page_config(page_title="Bank Churn Intelligence", page_icon="🏦", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Bank Churn Intelligence", page_icon="🏦", layout="wide", initial_sidebar_state="collapsed")
 st.markdown(COMMON_CSS, unsafe_allow_html=True)
+st.markdown("""
+<style>
+  [data-testid="stSidebar"] { display: none; }
+  [data-testid="collapsedControl"] { display: none; }
+</style>
+""", unsafe_allow_html=True)
 
 @st.cache_data
 def load_data():
@@ -22,44 +28,39 @@ def load_data():
 
 df_full = load_data()
 
-# sidebar filters
-def filters():
-    global sel_geo, sel_risk
-    geo_options  = ["All Regions"] + sorted(df_full["Geography"].unique().tolist())
-    risk_options = ["All Risk Tiers", "High Risk", "Medium Risk", "Low Risk"]
-    sel_geo  = st.selectbox("Geography", geo_options,  label_visibility="collapsed", key="dash_geo")
-    sel_risk = st.selectbox("Risk Tier",  risk_options, label_visibility="collapsed", key="dash_risk")
-    df_f = df_full.copy()
-    if sel_geo  != "All Regions":    df_f = df_f[df_f["Geography"]    == sel_geo]
-    if sel_risk != "All Risk Tiers": df_f = df_f[df_f["RiskCategory"] == sel_risk]
-    st.markdown(f"<div style='font-size:0.75rem;color:#57534e;margin-top:12px;'>{len(df_f):,} customers selected</div>", unsafe_allow_html=True)
-    return df_f
-
-sel_geo = "All Regions"; sel_risk = "All Risk Tiers"
-render_sidebar()
-
-# apply filters manually after sidebar
-df = df_full.copy()
-with st.sidebar:
-    st.markdown("<hr style='margin:16px 0;'>", unsafe_allow_html=True)
-    st.markdown("<div style='font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:#57534e;margin-bottom:8px;'>Filters</div>", unsafe_allow_html=True)
-    sel_geo  = st.selectbox("Geography",  ["All Regions"] + sorted(df_full["Geography"].unique().tolist()),  label_visibility="collapsed", key="dash_geo")
-    sel_risk = st.selectbox("Risk Tier",  ["All Risk Tiers","High Risk","Medium Risk","Low Risk"], label_visibility="collapsed", key="dash_risk")
-    if sel_geo  != "All Regions":    df = df[df["Geography"]    == sel_geo]
-    if sel_risk != "All Risk Tiers": df = df[df["RiskCategory"] == sel_risk]
-    st.markdown(f"<div style='font-size:0.75rem;color:#57534e;margin-top:12px;'>{len(df):,} customers selected</div>", unsafe_allow_html=True)
-
 # top nav
 render_topnav("Overview")
 
-# header
-col_title, col_badge = st.columns([4,1])
+# header row
+col_title, col_badge = st.columns([4, 1])
 with col_title:
     st.markdown('<div class="page-title">Bank Churn Intelligence</div>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Customer retention analytics · Predictive churn scoring · Revenue risk monitoring</div>', unsafe_allow_html=True)
 with col_badge:
-    st.markdown("<div style='text-align:right;padding-top:6px;'><span style='background:#292524;border:1px solid #44403c;color:#a8a29e;font-size:0.7rem;padding:4px 10px;border-radius:4px;'>LIVE DEMO</span></div>", unsafe_allow_html=True)
-st.markdown("<hr style='margin:12px 0 20px 0;'>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='text-align:right;padding-top:6px;'>"
+        "<a href='https://github.com/Nihira11/bank-churn-intelligence' target='_blank' "
+        "style='background:#292524;border:1px solid #44403c;color:#a8a29e;font-size:0.7rem;"
+        "padding:4px 10px;border-radius:4px;text-decoration:none;'> GitHub</a>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+st.markdown("<hr style='margin:12px 0 16px 0;'>", unsafe_allow_html=True)
+
+# inline filters 
+st.markdown("<div style='font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:#57534e;margin-bottom:8px;'>Filters</div>", unsafe_allow_html=True)
+f1, f2, f3 = st.columns([1, 1, 4])
+with f1:
+    sel_geo  = st.selectbox("Geography", ["All Regions"] + sorted(df_full["Geography"].unique().tolist()), label_visibility="collapsed", key="dash_geo")
+with f2:
+    sel_risk = st.selectbox("Risk Tier",  ["All Risk Tiers","High Risk","Medium Risk","Low Risk"], label_visibility="collapsed", key="dash_risk")
+with f3:
+    pass
+
+df = df_full.copy()
+if sel_geo  != "All Regions":    df = df[df["Geography"]    == sel_geo]
+if sel_risk != "All Risk Tiers": df = df[df["RiskCategory"] == sel_risk]
+st.markdown(f"<div style='font-size:0.75rem;color:#57534e;margin-bottom:20px;'>{len(df):,} customers selected</div>", unsafe_allow_html=True)
 
 # metrics
 total_customers    = len(df)
@@ -82,6 +83,17 @@ for col, label, value, sub, badge in [
         st.markdown(f'<div class="kpi-card"><div class="kpi-label">{label}</div><div class="kpi-value">{value}</div><div class="kpi-sub">{sub}</div><div class="kpi-badge">{badge}</div></div>', unsafe_allow_html=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
+
+# plotly helpers
+def base_layout(title=""):
+    return dict(
+        title=dict(text=title, font=dict(color="#e7e5e4", size=13), x=0, xanchor="left", pad=dict(b=8)),
+        paper_bgcolor="#1c1917", plot_bgcolor="#1c1917",
+        font=dict(color=TEXT, family="Inter", size=11),
+        margin=dict(t=40, b=32, l=8, r=80),
+        xaxis=dict(showgrid=False, color=TEXT, linecolor=STONE, tickcolor=STONE),
+        yaxis=dict(showgrid=True, gridcolor="#292524", color=TEXT, linecolor=STONE),
+    )
 
 # row 1
 st.markdown('<div class="section-header">Churn Overview</div>', unsafe_allow_html=True)
@@ -107,7 +119,7 @@ with c1:
 
 with c2:
     risk_order = ["High Risk","Medium Risk","Low Risk"]
-    rc = df["RiskCategory"].value_counts().reindex(risk_order).reset_index()
+    rc = df["RiskCategory"].value_counts().reindex(risk_order, fill_value=0).reset_index()
     rc.columns = ["RiskCategory","Count"]
     fig = go.Figure()
     for _, row in rc.iterrows():
@@ -197,4 +209,9 @@ with c8:
     fig.update_layout(**l); st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("<hr style='margin:32px 0 16px 0;'>", unsafe_allow_html=True)
-st.markdown("<div style='display:flex;justify-content:space-between;'><span style='font-size:0.72rem;color:#44403c;'>Bank Churn Intelligence · Portfolio Project</span><span style='font-size:0.72rem;color:#44403c;'>XGBoost · Scikit-learn · Streamlit · Plotly</span></div>", unsafe_allow_html=True)
+st.markdown(
+    "<div style='display:flex;justify-content:space-between;align-items:center;'>"
+    "<span style='font-size:0.72rem;color:#44403c;'>Bank Churn Intelligence · Portfolio Project</span>"
+    "<span style='font-size:0.72rem;color:#44403c;'>XGBoost · Scikit-learn · Streamlit · Plotly</span>"
+    "</div>", unsafe_allow_html=True,
+)
