@@ -83,7 +83,7 @@ for col, label, value, sub, badge in [
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# ── Row 1 ─────────────────────────────────────────────────────────────────────
+# row 1
 st.markdown('<div class="section-header">Churn Overview</div>', unsafe_allow_html=True)
 c1,c2,c3 = st.columns(3)
 
@@ -136,7 +136,7 @@ with c3:
     fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-# ── Row 2 ─────────────────────────────────────────────────────────────────────
+# row 2
 st.markdown('<div class="section-header">Risk Distribution</div>', unsafe_allow_html=True)
 c4,c5 = st.columns([1.3,1])
 
@@ -171,7 +171,7 @@ with c5:
     fig.update_layout(**l)
     st.plotly_chart(fig, use_container_width=True)
 
-# ── Row 3 ─────────────────────────────────────────────────────────────────────
+# row 3
 st.markdown('<div class="section-header">Key Churn Drivers</div>', unsafe_allow_html=True)
 c6,c7,c8 = st.columns(3)
 
