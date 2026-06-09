@@ -239,8 +239,8 @@ def style_status(val):
 
 styled = (
     top_customers.style
-    .applymap(style_risk,    subset=["Risk"])
-    .applymap(style_status,  subset=["Status"])
+    .map(style_risk,    subset=["Risk"])
+    .map(style_status,  subset=["Status"])
     .set_properties(**{
         "background-color": "#292524",
         "color":            "#e7e5e4",
