@@ -21,75 +21,21 @@ st.set_page_config(page_title="Model Performance", page_icon="📈", layout="wid
 st.markdown(COMMON_CSS, unsafe_allow_html=True)
 
 @st.cache_data
-def load_and_train():
-    df = pd.read_csv("data/segmented_bank_churn.csv")
-
-    features = [
-        "CreditScore","Geography","Gender","Age","Tenure","Balance",
-        "NumOfProducts","HasCrCard","IsActiveMember","EstimatedSalary",
-        "SatisfactionScore","CardType","PointEarned","Cluster"
-    ]
-    target = "Exited"
-
-    X = df[features]
-    y = df[target]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-
-    categorical_features = ["Geography","Gender","CardType"]
-    numeric_features     = [
-        "CreditScore","Age","Tenure","Balance","NumOfProducts",
-        "HasCrCard","IsActiveMember","EstimatedSalary",
-        "SatisfactionScore","PointEarned","Cluster"
-    ]
-
-    preprocessor = ColumnTransformer(transformers=[
-        ("num", StandardScaler(),                              numeric_features),
-        ("cat", OneHotEncoder(handle_unknown="ignore"),        categorical_features),
-    ])
-
-    models = {
-        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        "Random Forest":       RandomForestClassifier(n_estimators=200, random_state=42, class_weight="balanced"),
-        "XGBoost":             XGBClassifier(n_estimators=200, learning_rate=0.05, max_depth=4, random_state=42, eval_metric="logloss"),
-    }
-
-    results      = {}
-    roc_data     = {}
-    conf_matrices = {}
-
-    for name, m in models.items():
-        pipe = Pipeline(steps=[("preprocessor", preprocessor), ("model", m)])
-        pipe.fit(X_train, y_train)
-        y_pred = pipe.predict(X_test)
-        y_prob = pipe.predict_proba(X_test)[:, 1]
-
-        results[name] = {
-            "Accuracy":  accuracy_score(y_test, y_pred),
-            "Precision": precision_score(y_test, y_pred),
-            "Recall":    recall_score(y_test, y_pred),
-            "F1 Score":  f1_score(y_test, y_pred),
-            "ROC-AUC":   roc_auc_score(y_test, y_prob),
-        }
-
-        fpr, tpr, _ = roc_curve(y_test, y_prob)
-        roc_data[name] = (fpr, tpr)
-        conf_matrices[name] = confusion_matrix(y_test, y_pred)
-
-    return results, roc_data, conf_matrices, y_test
-
-render_sidebar()
+def load_results():
+    data = joblib.load("models/model_performance_results.pkl")
+    results       = data["results"]
+    roc_data      = {k: (v[0], v[1]) for k, v in data["roc_data"].items()}
+    conf_matrices = {k: np.array(v) for k, v in data["conf_matrices"].items()}
+    return results, roc_data, conf_matrices
+ 
 render_topnav("Model Performance")
-
+ 
 st.markdown('<div class="page-title">Model Performance</div>', unsafe_allow_html=True)
 st.markdown('<div class="page-subtitle">Logistic Regression · Random Forest · XGBoost · Evaluation metrics · ROC curves · Confusion matrices</div>', unsafe_allow_html=True)
 st.markdown("<hr style='margin:12px 0 20px 0;'>", unsafe_allow_html=True)
-
-with st.spinner("Training models on test set..."):
-    results, roc_data, conf_matrices, y_test = load_and_train()
-
+ 
+results, roc_data, conf_matrices = load_results()
+ 
 MODEL_COLORS = {
     "Logistic Regression": "#78716c",
     "Random Forest":       AMBER,
