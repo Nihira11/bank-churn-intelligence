@@ -10,13 +10,13 @@
 
 ## Executive Summary
 
-Customer retention is a major challenge for financial institutions as acquiring new customers costs significantly more than retaining existing ones. This project applies data analytics and machine learning to:
+Keeping existing customers is usually cheaper than finding new ones. This project uses data analysis and machine learning to:
 
-- Identify which customers are likely to churn
-- Understand the behavioural and demographic drivers of attrition
-- Estimate revenue exposure from predicted churn
-- Segment customers into actionable personas
-- Deliver explainable predictions and retention recommendations through an interactive business dashboard
+- Find customers who may leave the bank
+- Understand the main reasons why customers leave
+- Estimate how much revenue may be lost
+- Group customers into useful customer types
+- Show clear predictions and retention suggestions in an interactive dashboard
 
 ---
 
@@ -24,15 +24,15 @@ Customer retention is a major challenge for financial institutions as acquiring 
 
 ### Overview Dashboard
 ![Overview](screenshots/01_overview_kpi.png)
-*Headline KPIs, churn overview charts, and revenue at risk by geography and customer persona*
+*Headline KPIs, churn overview charts, and revenue at risk by geography and customer type*
 
 ### Churn Analysis
 ![Churn Analysis](screenshots/04_churn_analysis_heatmap.png)
-*Cross-dimensional churn rate analysis revealing high-risk age and balance combinations*
+*Shows how churn changes across different age and balance groups*
 
 ### Customer Segments
 ![Segments](screenshots/06_segments_radar.png)
-*Normalised radar chart comparing 4 K-Means customer personas across 6 behavioural dimensions*
+*Compares 4 customer groups across 6 areas using a normalised radar chart*
 
 ### Prediction Centre – Live SHAP Explainability
 ![Prediction](screenshots/08_prediction_shap.png)
@@ -40,11 +40,11 @@ Customer retention is a major challenge for financial institutions as acquiring 
 
 ### Retention Centre
 ![Retention](screenshots/10_retention_table.png)
-*Filterable high-risk customer list ranked by revenue at risk with CSV export*
+*Shows a filterable list of high-risk customers, ranked by revenue at risk. The list can be downloaded as a CSV file*
 
 ### Model Performance
 ![Model Performance](screenshots/11_model_metrics_roc.png)
-*Side-by-side evaluation of Logistic Regression, Random Forest, and XGBoost with ROC curves*
+*Compares Logistic Regression, Random Forest, and XGBoost using model scores and ROC curves*
 
 ---
 
@@ -55,31 +55,31 @@ bank-churn-intelligence/
 │
 ├── data/
 │   ├── bank_customer_churn.csv               # Raw dataset (10,000 records)
-│   ├── cleaned_bank_churn.csv                # After renaming, dropping cols, feature engineering
-│   ├── segmented_bank_churn.csv              # After K-Means clustering (adds Cluster column)
-│   ├── churn_predictions.csv                 # Model output: churn probabilities & risk categories
-│   └── revenue_at_risk.csv                   # Revenue at risk calculations per customer
+│   ├── cleaned_bank_churn.csv                # Cleaned data with new features
+│   ├── segmented_bank_churn.csv              # Data with K-Means customer groups
+│   ├── churn_predictions.csv                 # Churn probabilities and risk levels
+│   └── revenue_at_risk.csv                   # Estimated revenue at risk for each customer
 │
 ├── models/
-│   ├── churn_prediction_model.joblib         # Saved XGBoost pipeline (preprocessor + model)
-│   ├── shap_explainer.pkl                    # SHAP TreeExplainer for individual predictions
-│   ├── shap_feature_names.pkl                # Feature names post-preprocessing (20 features)
-│   └── model_performance_results.pkl         # Pre-computed metrics, ROC data, confusion matrices
+│   ├── churn_prediction_model.joblib         # Saved XGBoost pipeline
+│   ├── shap_explainer.pkl                    # SHAP explainer for individual predictions
+│   ├── shap_feature_names.pkl                # Names of the 20 processed features
+│   └── model_performance_results.pkl         # Saved model scores, ROC data and confusion matrices
 │
 ├── notebooks/
-│   ├── 01_data_understanding.ipynb           # Dataset profiling and quality assessment
-│   ├── 02_data_cleaning_feature_engineering.ipynb  # Cleaning and feature creation
-│   ├── 03_custom_churn_eda.ipynb             # Exploratory data analysis
-│   ├── 04_customer_segmentation.ipynb        # K-Means clustering and persona identification
-│   ├── 05_churn_prediction_model.ipynb       # Model training, evaluation, SHAP export
-│   └── 06_revenue_at_risk.ipynb              # Revenue at risk framework
+│   ├── 01_data_understanding.ipynb           # Understand and check the dataset
+│   ├── 02_data_cleaning_feature_engineering.ipynb  # Clean data and create features
+│   ├── 03_custom_churn_eda.ipynb             # Explore churn patterns
+│   ├── 04_customer_segmentation.ipynb        # Create customer groups with K-Means
+│   ├── 05_churn_prediction_model.ipynb       # Train and test models then export SHAP files
+│   └── 06_revenue_at_risk.ipynb              # Calculate revenue at risk
 │
 ├── pages/
-│   ├── 1_Churn_Analysis.py                   # Demographic, behavioural and product churn patterns
-│   ├── 2_Customer_Segments.py                # Customer personas and segment explorer
-│   ├── 3_Prediction_Centre.py                # Live churn prediction with SHAP explainability
-│   ├── 4_Retention_Centre.py                 # At-risk customers and retention playbook
-│   └── 5_Model_Performance.py                # ROC curves, confusion matrices, metric comparison
+│   ├── 1_Churn_Analysis.py                   # Churn patterns by customer type and behaviour
+│   ├── 2_Customer_Segments.py                # Customer groups and segment explorer
+│   ├── 3_Prediction_Centre.py                # Live churn prediction and SHAP explanation
+│   ├── 4_Retention_Centre.py                 # At-risk customers and retention ideas
+│   └── 5_Model_Performance.py                # Model scores, ROC curves and confusion matrices
 │
 ├── screenshots/
 │   ├── dashboard_overview.png
@@ -97,8 +97,8 @@ bank-churn-intelligence/
 │   ├── model_performance_roc.png
 │   └── model_performance_confusion.png
 │
-├── app.py                              # Main entry point and overview page
-├── utils.py                                  # Shared CSS, navigation, chart helpers
+├── app.py                                    # Main app and overview page
+├── utils.py                                  # Shared styling, navigation and chart tools
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -120,36 +120,53 @@ bank-churn-intelligence/
 | Missing values | None |
 | Duplicates | None |
 
-**Target variable:** `Exited` – 1 = Churned, 0 = Retained
+**Target variable:** `Exited` 
+- 1 = Churned (customer left the bank)
+- 0 = Retained (customer stayed)
 
 ---
 
 ## Dashboard Pages
 
 ### 🏠 Overview
-Headline KPIs including total customers, historical churn rate, predicted churners, high-risk count, and total revenue at risk. Churn overview charts, risk distribution, and key churn driver breakdowns by age, geography, and product usage. Includes geography and risk tier filters.
+The Overview page shows the most important results, including:
+
+- Total number of customers
+- Past churn rate
+- Number of customers predicted to leave
+- Number of high-risk customers
+- Total estimated revenue at risk
+
+It also includes charts for churn, risk levels, age, country and product use. Users can filter the results by country and risk level.
 
 ### 📊 Churn Analysis
-Deep-dive into churn patterns across demographics (gender, age, geography), behaviour (activity status, complaints, satisfaction), and product usage (number of products, balance group, card type). Includes an age × balance churn heatmap as the showstopper visual.
+This page studies churn across:
+
+- Customer details: gender, age and country
+- Customer behaviour: activity, complaints and satisfaction
+- Bank products: number of products, balance group, and card type
+
+It also includes an age and balance heatmap that makes high-risk customer groups easy to find.
 
 ### 👥 Customer Segments
-K-Means clustering with k=4, producing four customer personas:
+K-Means clustering divides customers into four groups:
 
-| Cluster | Persona | Churn Risk |
+| Cluster | Customer Type | Churn Risk |
 |---|---|---|
 | 0 | Active High-Balance | Low (13%) |
 | 1 | Older At-Risk | High (36%) |
 | 2 | Inactive High-Balance | Medium-High (29%) |
 | 3 | Low-Balance Product-Heavy | Low (12%) |
 
-Includes persona cards with risk badges, normalised radar chart, segment comparison charts, and stacked churn breakdown.
+The page includes customer group cards, risk labels, a radar chart, comparison charts, and a churn breakdown for each group.
 
 ### 🔮 Prediction Centre
-Live individual churn prediction using the saved XGBoost pipeline. Input any customer profile and receive:
-- Real-time churn probability with gauge chart
-- Risk category badge (Low / Medium / High)
-- **SHAP waterfall chart** showing actual model feature contributions
-- Similar customer comparison with distribution chart and insight
+This page uses the saved XGBoost model to predict whether an individual customer may leave. After entering a customer profile, the user receives:
+
+- A live churn probability shown on a gauge chart
+- A Low, Medium or High risk label
+- A **SHAP waterfall chart** showing which features increased or reduced the risk
+- A comparison with similar customers
 
 ### 🎯 Retention Centre
 Business-focused retention toolkit:
@@ -159,11 +176,21 @@ Business-focused retention toolkit:
 - Retention playbook with prioritised strategies per segment
 - Downloadable at-risk customer CSV
 
+This page helps the bank decide which customers to contact first. It includes:
+
+- A filterable table of at-risk customers
+- Controls for churn probability and customer group
+- Revenue-at-risk charts by country and customer group
+- A chart comparing churn probability and customer balance
+- Suggested retention actions for each customer group
+- A downloadable CSV file of at-risk customers
+
 ### 📈 Model Performance
-Full model evaluation across three candidate models (loads instantly from pre-computed results):
-- Metric comparison table (Accuracy, Precision, Recall, F1, ROC-AUC)
-- ROC curves for all three models on one chart
-- Confusion matrices with TP/FP/FN/TN breakdown
+This page compares three machine learning models using saved results, so it loads quickly. It includes:
+
+- Accuracy, Precision, Recall, F1 and ROC-AUC scores
+- ROC curves for all three models
+- Confusion matrices showing correct and incorrect predictions
 
 ---
 
@@ -177,7 +204,7 @@ Full model evaluation across three candidate models (loads instantly from pre-co
 | Random Forest | 0.851 | 0.642 | 0.610 | 0.626 | 0.865 |
 | **XGBoost** ✓ | **0.868** | **0.775** | **0.498** | **0.606** | **0.875** |
 
-**XGBoost** was selected as the final model based on highest ROC-AUC (0.875) and best overall predictive performance.
+**XGBoost** was selected as the final model based on highest ROC-AUC score of 0.875 and best overall predictive performance.
 
 ### Features Used
 
@@ -187,16 +214,16 @@ HasCrCard, IsActiveMember, EstimatedSalary, SatisfactionScore,
 CardType, PointEarned, Cluster
 ```
 
-> **Note on data leakage:** The `Complain` feature was excluded from modelling. Initial experiments produced near-perfect metrics (ROC-AUC ~1.0), indicating it was a near-direct proxy for the target variable rather than a genuine behavioural predictor.
+> **Important:** The `Complain` feature was not used to train the model. When it was included, the model achieved an almost perfect ROC-AUC score of about 1.0. This showed that complaints were too closely linked to the answer and could make the model look unrealistically accurate. This problem is called data leakage.
 
-### Explainability
-SHAP (SHapley Additive exPlanations) via `TreeExplainer` explains individual predictions. The dashboard renders a real-time SHAP waterfall chart for any input profile, showing which features push the prediction toward or away from churn. Model baseline (average churn probability): ~20.1%.
+**Understanding the Predictions**
+SHAP (SHapley Additive exPlanations) explains why the model gives each prediction. The dashboard uses SHAP’s `TreeExplainer` to create a live waterfall chart for any customer profile. The chart shows which features increase churn risk and which features reduce it. The model’s average starting churn probability is about 20.1%.
 
 ---
 
 ## Revenue at Risk Framework
 
-Since the dataset lacks transaction-level history, a simplified customer value proxy is used:
+The dataset does not include full customer transaction history. Because of this, the project uses a simple estimate of customer value:
 
 ```
 CustomerValueScore = 0.40 × BalanceScore
@@ -207,8 +234,9 @@ CustomerValueScore = 0.40 × BalanceScore
 EstimatedCustomerValue = CustomerValueScore × EstimatedSalary
 RevenueAtRisk          = EstimatedCustomerValue × ChurnProbability
 ```
+This means balance has the highest weight, followed by salary, account length and reward points.
 
-**Total revenue at risk across the dataset: ~$105.9M**
+**Estimated total revenue at risk: about $105.9 million.**
 
 ---
 
@@ -230,12 +258,12 @@ RevenueAtRisk          = EstimatedCustomerValue × ChurnProbability
 ## Key Findings
 
 - **Germany** has the highest churn rate at 32.4% vs ~16% for France and Spain
-- **Inactive customers** churn at 26.9% vs 14.3% for active members
-- **Customers who complained** churn at 99.5% – complaint resolution is the single highest-leverage retention action
-- **2-product customers** have the lowest churn at 7.6%; 3+ product customers spike to 82.7%+
-- **51–60 age group** has the highest churn at 56.2%
-- **Cluster 1 (Older At-Risk)** carries the highest individual churn risk at 36%
-- **Cluster 2 (Inactive High-Balance)** carries the highest total revenue at risk at ~$49.8M
+- **Inactive customers** have a churn rate of 26.9%, compared with 14.3% for active customers
+- **Customers who complained** have a 99.5% churn rate. Solving complaints quickly may be one of the best ways to reduce churn
+- **Customers with two products** have the lowest churn rate at 7.6%. Churn rises to 82.7% or more for customers with three or more products
+- **Customers aged 51–60** have the highest churn rate at 56.2%
+- **Cluster 1: (Older At-Risk)** has the highest individual churn risk at 36%
+- **Cluster 2: (Inactive High-Balance)** has the highest total revenue at risk at about $49.8 million
 
 ---
 
@@ -252,10 +280,10 @@ streamlit run Dashboard.py
 
 ## Future Improvements
 
-- Connect to a live database for real-time monitoring
-- Replace CLV proxy with a full discounted cash flow model given richer transaction data
-- Add automated business reporting (PDF export)
-- Implement customer lifetime value modelling with transaction-level history
+- Connect the dashboard to a live database for real-time updates
+- Use a more detailed customer value model when transaction data becomes available
+- Add automatic PDF business reports
+- Build a full customer lifetime value model using transaction history
 
 ---
 
